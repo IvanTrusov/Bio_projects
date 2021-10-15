@@ -1,0 +1,16 @@
+import gzip
+import time
+import os
+from functools import partial
+start_time=time.time()
+folder=r'New folder'
+list_of_files = os.listdir(folder)
+for file in list_of_files:
+    file_name = folder+str('\\') + str(file)
+    with gzip.open(file_name, 'rt', encoding='utf-8') as f:
+        f_read = partial(f.read, 100000)
+        try:
+            f.read()
+        except EOFError:
+            print(file_name)
+    print("--- %s seconds ---" % (time.time() - start_time))
