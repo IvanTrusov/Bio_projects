@@ -3,9 +3,10 @@ import gzip
 import os
 
 
-df = pd.DataFrame(columns = ['id', 'Sequence', 'Quality', 'Length'])
+df = pd.DataFrame(columns = ['id', 'Sequence', 'Quality'])
 
-records, quality, seq, length = [], [], [], []
+id, quality, seq = [], [], []
+
 
 folder=r'New folder'
 
@@ -16,22 +17,16 @@ for file in list_of_files:
     file_name = folder+str('\\') + str(file)
 
     with gzip.open(file_name, 'rt', encoding='utf-8') as f:
-
-        n=0
+    
 
         try:
-        
-            for record in f:
+            file_fastq=f.read().splitlines()
 
-                records.append(record.strip())
+            id = file_fastq[0::4]
 
-                seq.append(f.readline().strip())
+            seq = file_fastq[1::4]
 
-                length.append(len(seq[-1]))
-
-                f.readline()
-
-                quality.append(f.readline().strip())
+            quality = file_fastq[3::4]
 
 
         except EOFError:
@@ -39,23 +34,11 @@ for file in list_of_files:
             continue
 
 
-        mdf = pd.DataFrame({'id': records, 'Sequence': seq, 'Quality': quality,'Length': length})
+        mdf = pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality})
 
         df = pd.concat([df, mdf], axis=0)
 
 
-        records.clear()
+        id.clear()
         quality.clear()
         seq.clear()
-        length.clear()
-
-
-
-
-
-
-
-
-
-
-
