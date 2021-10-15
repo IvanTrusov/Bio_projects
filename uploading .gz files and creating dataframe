@@ -3,9 +3,9 @@ import gzip
 import os
 
 
-df = pd.DataFrame(columns = ['id', 'Quality', 'GC', 'N', 'Length'])
+df = pd.DataFrame(columns = ['id', 'Sequence', 'Quality', 'Length'])
 
-records, quality, GC, N, length = [], [], [], [], []
+records, quality, seq, length = [], [], [], []
 
 folder=r'New folder'
 
@@ -20,50 +20,33 @@ for file in list_of_files:
         n=0
 
         try:
+        
             for record in f:
 
-                record=record.strip()
+                records.append(record.strip())
 
-                if n==0:
+                seq.append(f.readline().strip())
 
-                    records.append(record)
+                length.append(len(seq[-1]))
 
-                    n+=1
+                f.readline()
 
-                elif n==1:
+                quality.append(f.readline().strip())
 
-                    GC.append(int(((record.count('G') + record.count('C')) / len(record)) * 100))
-
-                    N.append(int(((record.count('N') / len(record)) * 100)))
-
-                    n+=1
-
-                elif n==2:
-
-                    n+=1
-
-                else:
-
-                    length.append(len(record))
-
-                    quality.append((int(sum((map(lambda x: ord(x) - 33, record))) / len(record))))
-
-                    n=0
 
         except EOFError:
 
             continue
 
 
-        mdf = pd.DataFrame({'id': records, 'Quality': quality, 'GC': GC, 'N': N, 'Length': length})
+        mdf = pd.DataFrame({'id': records, 'Sequence': seq, 'Quality': quality,'Length': length})
 
         df = pd.concat([df, mdf], axis=0)
 
 
         records.clear()
         quality.clear()
-        GC.clear()
-        N.clear()
+        seq.clear()
         length.clear()
 
 
