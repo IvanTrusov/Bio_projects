@@ -1,0 +1,78 @@
+import pandas as pd
+import gzip
+import os
+
+
+df = pd.DataFrame(columns = ['id', 'Quality', 'GC', 'N', 'Length'])
+
+records, quality, GC, N, length = [], [], [], [], []
+
+folder=r'New folder'
+
+list_of_files = os.listdir(folder)
+
+for file in list_of_files:
+
+    file_name = folder+str('\\') + str(file)
+
+    with gzip.open(file_name, 'rt', encoding='utf-8') as f:
+
+        n=0
+
+        try:
+            for record in f:
+
+                record=record.strip()
+
+                if n==0:
+
+                    records.append(record)
+
+                    n+=1
+
+                elif n==1:
+
+                    GC.append(int(((record.count('G') + record.count('C')) / len(record)) * 100))
+
+                    N.append(int(((record.count('N') / len(record)) * 100)))
+
+                    n+=1
+
+                elif n==2:
+
+                    n+=1
+
+                else:
+
+                    length.append(len(record))
+
+                    quality.append((int(sum((map(lambda x: ord(x) - 33, record))) / len(record))))
+
+                    n=0
+
+        except EOFError:
+
+            continue
+
+
+        mdf = pd.DataFrame({'id': records, 'Quality': quality, 'GC': GC, 'N': N, 'Length': length})
+
+        df = pd.concat([df, mdf], axis=0)
+
+
+        records.clear()
+        quality.clear()
+        GC.clear()
+        N.clear()
+        length.clear()
+
+
+
+
+
+
+
+
+
+
+
