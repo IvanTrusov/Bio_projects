@@ -1,7 +1,5 @@
 import gzip
-import time
 import os
-start_time=time.time()
 folder=r'New folder'
 list_of_files = os.listdir(folder)
 for file in list_of_files:
@@ -10,5 +8,4 @@ for file in list_of_files:
         try:
             f.read()
         except EOFError:
-            print(file_name)
-    print("--- %s seconds ---" % (time.time() - start_time))
+            continue
