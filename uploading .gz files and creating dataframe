@@ -2,42 +2,28 @@ import pandas as pd
 import gzip
 import os
 
-
-df = pd.DataFrame(columns = ['id', 'Sequence', 'Quality'])
-
+df = pd.DataFrame(columns=['id', 'Sequence', 'Quality'])
 id, quality, seq = [], [], []
-
-
-folder=r'New folder'
-
+folder = r'New folder'
 list_of_files = os.listdir(folder)
 
 for file in list_of_files:
+    file_name = folder + str('\\') + str(file) #gererates path to file
 
-    file_name = folder+str('\\') + str(file)
-
-    with gzip.open(file_name, 'rt', encoding='utf-8') as f:
-    
+    with gzip.open(file_name, 'rt', encoding='utf-8') as data:
 
         try:
-            file_fastq=f.read().splitlines()
+            for strings in data:
+                id.append(strings)
+                seq.append(data.readline().strip())
+                data.readline()
+                quality.append(data.readline().strip())
 
-            id = file_fastq[0::4]
-
-            seq = file_fastq[1::4]
-
-            quality = file_fastq[3::4]
-
-
-        except EOFError:
-
+        except EOFError: #if there are more files, keep reading
             continue
 
-
         mdf = pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality})
-
-        df = pd.concat([df, mdf], axis=0)
-
+        df = pd.concat([df, mdf], axis=0) #create a common data base from all the files
 
         id.clear()
         quality.clear()
