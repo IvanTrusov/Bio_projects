@@ -2,6 +2,12 @@ import pandas as pd
 import gzip
 import os
 
+def creating_dataframe(id, seq, quality,df):
+    mdf = pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality})
+    df = pd.concat([df, mdf], axis=0)
+    id.clear(), seq.clear(), quality.clear()
+    return df
+
 df = pd.DataFrame(columns=['id', 'Sequence', 'Quality'])
 id, quality, seq = [], [], []
 folder = r'New folder'
@@ -14,17 +20,26 @@ for file in list_of_files:
 
         try:
             for strings in data:
-                id.append(strings)
+                id.append(strings.strip())
                 seq.append(data.readline().strip())
                 data.readline()
                 quality.append(data.readline().strip())
 
         except EOFError: #if there are more files, keep reading
+
+            try:
+                df = creating_dataframe(id, seq, quality, df)
+
+            except ValueError: #if we lose some data, replace the skips with 0
+                if len(id)>len(seq):
+                    seq.append('0')
+                    quality.append('0')
+
+                else:
+                    quality.append('0')
+
+                df = creating_dataframe(id, seq, quality, df)
+
             continue
 
-        mdf = pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality})
-        df = pd.concat([df, mdf], axis=0) #create a common data base from all the files
-
-        id.clear()
-        quality.clear()
-        seq.clear()
+        df = creating_dataframe(id, seq, quality, df)
