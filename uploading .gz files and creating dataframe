@@ -25,21 +25,12 @@ for file in list_of_files:
                 data.readline()
                 quality.append(data.readline().strip())
 
-        except EOFError: #if there are more files, keep reading
+        except EOFError:         #if the file is corrupted
 
-            try:
-                df = creating_dataframe(id, seq, quality, df)
+            if len(id)>len(seq):        #integrity check, if not replace loss with 0
+                seq.append('0')
+                quality.append('0')
+            else:
+                quality.append('0')
 
-            except ValueError: #if we lose some data, replace the skips with 0
-                if len(id)>len(seq):
-                    seq.append('0')
-                    quality.append('0')
-
-                else:
-                    quality.append('0')
-
-                df = creating_dataframe(id, seq, quality, df)
-
-            continue
-
-        df = creating_dataframe(id, seq, quality, df)
+        df = creating_dataframe(id, seq, quality,df)
