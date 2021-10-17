@@ -1,3 +1,4 @@
+"""This method will be good for small file sizes"""
 import pandas as pd
 import gzip
 import os
