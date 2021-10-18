@@ -10,7 +10,7 @@ for file in list_of_files:
     with gzip.open(file_name, 'rt', encoding='utf-8') as f:
     
         try:
-            f.read()
+            f.read() #here you can come up with your own work on the file
             
         except EOFError:
             continue
