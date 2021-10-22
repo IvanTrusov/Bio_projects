@@ -3,12 +3,6 @@ import pandas as pd
 import gzip
 import os
 
-def creating_dataframe(id, seq, quality,df):
-    mdf = pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality})
-    df = pd.concat([df, mdf], axis=0)
-    id.clear(), seq.clear(), quality.clear()
-    return df
-
 df = pd.DataFrame(columns=['id', 'Sequence', 'Quality'])
 id, quality, seq = [], [], []
 folder = r'New folder'
@@ -27,10 +21,13 @@ for file in list_of_files:
                 quality.append(data.readline().strip())
 
         except EOFError:         #if the file is corrupted
-            if len(id)>len(seq):        #integrity check, if not replace loss with 0
-                seq.append('0')
-                quality.append('0')
-            else:
-                quality.append('0')
 
-        df = creating_dataframe(id, seq, quality,df)
+            if len(id)>len(seq):        #integrity check, if not replace loss with NaN
+                seq.append('NaN')
+                quality.append('NaN')
+            else:
+                quality.append('NaN')
+            print(file+':EOFError')
+
+        df = df.append(pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality}))
+        id.clear(),seq.clear(),quality.clear()
