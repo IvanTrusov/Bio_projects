@@ -1,41 +1,41 @@
-translate_data = pd.DataFrame([int(ord(j)-33) for j in i] for i in df['Quality']) #decoding into ASCII_BASE=33
-
-average_quality_list = (translate_data.mean(axis=1)).astype(int) #mean value of each read
-average_quality = pd.DataFrame({'Mean Sequence Quality (Phred Score)':average_quality_list.unique(),
-                              'Number of reads':average_quality_list.value_counts()})
-
-quality_per_reads = pd.DataFrame({'Position in read (bp)':[i+1 for i in translate_data.columns.values],
-                                  'Quality':[(translate_data[i].mean())
-                                             for i in translate_data.columns.values]})
-
-average_length_list = df['Sequence'].apply(lambda x: len(x))
-average_length = pd.DataFrame({'Sequence Length (bp)':average_length_list.unique(),
-                               'Number of reads':average_length_list.value_counts()})
-
 def graph():
-    pp = PdfPages('test.pdf') #creating a pdf file
+    pp = PdfPages('test.pdf')  # creating a pdf file
 
-    plt.figure(figsize=(8, 4))  #Distribution of sequence lengths over all sequences
+    translate_data = pd.DataFrame([int(ord(j) - 33) for j in i] for i in df['Quality'])  # decoding into ASCII_BASE=33
+
+    average_length_list = df['Sequence'].apply(lambda x: len(x))
+    average_length = pd.DataFrame({'Sequence Length (bp)': average_length_list.unique(),
+                                   'Number of reads': average_length_list.value_counts()})
+
+    plt.figure(figsize=(8, 4))      #Distribution of sequence lengths over all sequences
     sns.lineplot(data=average_length,
                  x='Sequence Length (bp)',
                  y='Number of reads')
+    plt.xticks(range(average_length['Sequence Length (bp)'].min(),
+                         average_length['Sequence Length (bp)'].max()+1))
     pp.savefig()
 
-    l = sns.catplot(data=average_quality, kind='bar',  #Quality score distribution over all sequences
+    average_quality_list = (translate_data.mean(axis=1)).astype(int)  # mean value of each read
+    average_quality = pd.DataFrame({'Mean Sequence Quality (Phred Score)': average_quality_list.unique(),
+                                    'Number of reads': average_quality_list.value_counts()})
+
+    l = sns.catplot(data=average_quality, kind='bar',   #Quality score distribution over all sequences
                     x='Mean Sequence Quality (Phred Score)',
                     y='Number of reads', height=8, aspect=1)
     l.fig.set_figheight(4)
     l.fig.set_figwidth(8)
     pp.savefig()
 
+    quality_per_reads = pd.DataFrame({'Position in read (bp)': [i + 1 for i in translate_data.columns.values],
+                                      'Quality': [(translate_data[i].mean())
+                                                  for i in translate_data.columns.values]})
+
     plt.figure(figsize=(8, 4))
     sns.lineplot(x='Position in read (bp)', #Quality scores across all bases
                  y='Quality',
                  data=quality_per_reads)
     plt.yticks(range(int(quality_per_reads['Quality'].min()), int(quality_per_reads['Quality'].max())))
-    plt.xticks(range(1, int(quality_per_reads['Position in read (bp)'].max()), 8))
+    plt.xticks(range(1, int(quality_per_reads['Position in read (bp)'].max()+1),2))
     pp.savefig()
 
     pp.close()
-graph()
-
