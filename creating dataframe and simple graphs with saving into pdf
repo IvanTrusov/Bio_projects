@@ -1,0 +1,78 @@
+import pandas as pd
+import gzip
+import os
+import seaborn as sns
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
+df = pd.DataFrame(columns=['id', 'Sequence', 'Quality'])
+id, quality, seq = [], [], []
+folder = r'New folder'
+list_of_files = os.listdir(folder)
+
+for file in list_of_files:
+    file_name = folder + str('\\') + str(file) #gererates path to file
+
+    with gzip.open(file_name, 'rt', encoding='utf-8') as data:
+
+        try:
+            for strings in data:
+                id.append(strings.strip())
+                seq.append(data.readline().strip())
+                data.readline()
+                quality.append(data.readline().strip())
+
+        except EOFError:         #if the file is corrupted
+
+            if len(id)>len(seq):        #integrity check, if not replace loss with NaN
+                seq.append('NaN')
+                quality.append('NaN')
+            else:
+                quality.append('NaN')
+            print(file+':EOFError')
+
+        df = df.append(pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality}))
+        id.clear(),seq.clear(),quality.clear()
+
+
+translate_data = pd.DataFrame([int(ord(j)-33) for j in i] for i in df['Quality']) #decoding into ASCII_BASE=33
+
+average_quality_list = (translate_data.mean(axis=1)).astype(int) #mean value of each read
+average_quality = pd.DataFrame({'Mean Sequence Quality (Phred Score)':average_quality_list.unique(),
+                              'Number of reads':average_quality_list.value_counts()})
+
+quality_per_reads = pd.DataFrame({'Position in read (bp)':[i+1 for i in translate_data.columns.values],
+                                  'Quality':[(translate_data[i].mean())
+                                             for i in translate_data.columns.values]})
+
+average_length_list = df['Sequence'].apply(lambda x: len(x))
+average_length = pd.DataFrame({'Sequence Length (bp)':average_length_list.unique(),
+                               'Number of reads':average_length_list.value_counts()})
+
+def graph():
+    pp = PdfPages('test.pdf') #creating a pdf file
+
+    plt.figure(figsize=(8, 4))  #Distribution of sequence lengths over all sequences
+    sns.lineplot(data=average_length,
+                 x='Sequence Length (bp)',
+                 y='Number of reads')
+    pp.savefig()
+
+    l = sns.catplot(data=average_quality, kind='bar',  #Quality score distribution over all sequences
+                    x='Mean Sequence Quality (Phred Score)',
+                    y='Number of reads', height=8, aspect=1)
+    l.fig.set_figheight(4)
+    l.fig.set_figwidth(8)
+    pp.savefig()
+
+    plt.figure(figsize=(8, 4))
+    sns.lineplot(x='Position in read (bp)', #Quality scores across all bases
+                 y='Quality',
+                 data=quality_per_reads)
+    plt.yticks(range(int(quality_per_reads['Quality'].min()), int(quality_per_reads['Quality'].max())))
+    plt.xticks(range(1, int(quality_per_reads['Position in read (bp)'].max()), 8))
+    pp.savefig()
+
+    pp.close()
+graph()
+
