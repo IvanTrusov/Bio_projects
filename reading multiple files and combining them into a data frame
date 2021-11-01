@@ -1,0 +1,42 @@
+import gzip
+import os
+import multiprocessing
+import pandas as pd
+
+def read_gz(file_name):
+    id, quality, seq = [], [], []
+    with gzip.open(file_name, 'rt', encoding='utf-8') as data:
+
+        try:
+            for strings in data:
+                id.append(strings.strip())
+                seq.append(data.readline().strip())
+                data.readline()
+                quality.append([ord(i)-33 for i in data.readline().strip()])
+
+        except EOFError:  # if the file is corrupted
+
+            if len(id) > len(seq):  # integrity check, if not replace loss with NaN
+                seq.append('NaN')
+                quality.append('NaN')
+            else:
+                quality.append('NaN')
+            print(file_name + ':EOFError')
+
+    return pd.DataFrame({'id':id,'seq':seq,'quality':quality})
+    
+data_frame = pd.DataFrame({'id':[],'seq':[],'quality':[]})
+
+files = []
+folder = r'New folder'
+list_of_files = os.listdir(folder)
+for file in list_of_files:
+    file_name = folder + str('\\') + str(file)  # gererates path to file
+    files.append(file_name)
+
+if __name__ == '__main__':
+    with multiprocessing.Pool(len(files)) as pool:
+        print('Results:')
+        results = pool.map(read_gz, files)
+        for i in results:
+            data_frame = data_frame.append(i, ignore_index=True)
