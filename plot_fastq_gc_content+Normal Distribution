@@ -1,0 +1,73 @@
+import pyfastx
+import os
+import math
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.backends.backend_pdf import PdfPages
+
+def normpdf(x, mean, sd):
+
+    var = float(sd)**2
+    denom = (2*math.pi*var)**.5
+    num = math.exp(-(float(x)-float(mean))**2/(2*var))
+    return num/denom
+def plot_fastq_gc_content(grafic=True,limit=0):
+
+    df = pd.DataFrame(columns=['id', 'Sequence', 'Quality'])
+    id, quality, seq = [], [], []
+    folder = r'New folder'
+    list_of_files = os.listdir(folder)
+
+
+    for file in list_of_files:
+        file_name = folder + str('\\') + str(file)  # gererates path to file
+        fastq_file = pyfastx.Fastq(file_name, build_index=False)
+
+        if limit >= 1:
+            n = 0
+            for name, sequence, qual in fastq_file:
+                id.append(name)
+                seq.append(sequence)
+                quality.append(qual)
+                n += 1
+                if n == limit:
+                    break
+        else:
+            for name, sequence, qual in fastq_file:
+                id.append(name)
+                seq.append(sequence)
+                quality.append(qual)
+
+        try:  # file integrity check
+            df = df.append(pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality}))
+        except:
+            print('File ' + file + ' has been damaged')
+            grafic = False
+
+        id.clear(), seq.clear(), quality.clear()
+    if grafic==True:
+        pp = PdfPages('plot_fastq_gc_content.pdf')  # creating a pdf file
+
+        f, ax = plt.subplots(figsize=(12, 5))
+
+        gc = pd.DataFrame(((i.count('G') + i.count('C')) / len(i)) * 100 for i in df['Sequence'])
+        gc.hist(ax=ax, bins=150, color='red', grid=False, histtype='step', lw=6)
+
+        ax.set_xlim((0, 100))
+        plt.xticks(np.arange(0, 105, 5))
+        plt.ylabel('Reads')
+        plt.xlabel('Mean of GC content(%)')
+        x = np.arange(1, 100, .1)
+        f = [normpdf(i, gc.mean(), gc.std()) for i in x]
+        ax2 = ax.twinx()
+        ax2.plot(x, f, label='Normal Distribution')
+        ax2.set_ylim(0, max(f))
+        ax2.axes.get_yaxis().set_ticks([])
+        ax.set_title('GC distribution over all sequences', size=15)
+        plt.legend()
+        
+        pp.savefig()
+        pp.close()
+
+plot_fastq_gc_content(limit=100000)
