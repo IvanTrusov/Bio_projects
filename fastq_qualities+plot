@@ -41,19 +41,24 @@ def plot_fastq_qualities(grafic=True, limit=0):
 
         id.clear(), seq.clear(), quality.clear()
 
-    if grafic==True:
+        if grafic==True:
         pp = PdfPages('plot_fastq_qualities.pdf')  # creating a pdf file
 
         translate_data = pd.DataFrame([int(ord(j) - 33) for j in i] for i in df['Quality'])  # decoding into ASCII_BASE=33
         l = len(translate_data.T) + 1
 
+        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233), 'figure.facecolor': 'white'})
+
         mean = translate_data.mean()
         mean.index += 1
+
         translate_data.columns = [i for i in range(1,l)]
         translate_data.index+=1
-        ax = sns.catplot(data=translate_data, kind='box', showfliers=False, color="blue")
+
+        ax =sns.catplot(data=translate_data, kind='box', showfliers=False, color="blue")
         ax.fig.set_figheight(7)
         ax.fig.set_figwidth(12)
+
         sns.lineplot(data=mean, color='black')
 
         plt.xticks(np.arange(-1, l,5))
@@ -66,6 +71,7 @@ def plot_fastq_qualities(grafic=True, limit=0):
 
         plt.plot((np.arange(0, l)), [20 for i in (np.arange(0, l))], color="r", linewidth = 2)
         plt.plot((np.arange(0, l)), [28 for i in (np.arange(0, l))], color="green", linewidth=2)
+
         pp.savefig()
         pp.close()
     return
