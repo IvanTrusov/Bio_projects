@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
-start_time=time.time()
 
 def plot_fastq_qualities(grafic=True, limit=0):
 
@@ -14,13 +13,13 @@ def plot_fastq_qualities(grafic=True, limit=0):
     folder = r'New folder'
     list_of_files = os.listdir(folder)
 
-    for file in list_of_files:
+        for file in list_of_files:
         file_name = folder + str('\\') + str(file)  # gererates path to file
-
+        fastq_file = pyfastx.Fastq(file_name, build_index=False)
 
         if limit>=1:
             n = 0
-            for name, sequence, qual in pyfastx.Fastq(file_name, build_index=False):
+            for name, sequence, qual in fastq_file:
                 id.append(name)
                 seq.append(sequence)
                 quality.append(qual)
@@ -28,10 +27,11 @@ def plot_fastq_qualities(grafic=True, limit=0):
                 if n == limit:
                     break
         else:
-            for name, sequence, qual in pyfastx.Fastq(file_name, build_index=False):
+            for name, sequence, qual in fastq_file:
                 id.append(name)
                 seq.append(sequence)
                 quality.append(qual)
+
 
         try: #file integrity check
             df = df.append(pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality}))
