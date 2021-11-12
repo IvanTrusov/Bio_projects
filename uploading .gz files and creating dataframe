@@ -1,33 +1,28 @@
-"""This method will be good for small file sizes"""
+import pyfastx
 import pandas as pd
-import gzip
-import os
 
-df = pd.DataFrame(columns=['id', 'Sequence', 'Quality'])
-id, quality, seq = [], [], []
-folder = r'New folder'
-list_of_files = os.listdir(folder)
+def read_gz(file_name,limit=0):
+    id, quality, seq = [], [], []
 
-for file in list_of_files:
-    file_name = folder + str('\\') + str(file) #gererates path to file
+    fastq_file = pyfastx.Fastq(file_name, build_index=False)
 
-    with gzip.open(file_name, 'rt', encoding='utf-8') as data:
+    if limit >= 1:
+        n = 0
+        for name, sequence, qual in fastq_file:
+            id.append(name)
+            seq.append(sequence)
+            quality.append(qual)
+            n += 1
+            if n == limit:
+                break
+    else:
+        for name, sequence, qual in fastq_file:
+            id.append(name)
+            seq.append(sequence)
+            quality.append(qual)
 
-        try:
-            for strings in data:
-                id.append(strings.strip())
-                seq.append(data.readline().strip())
-                data.readline()
-                quality.append(data.readline().strip())
-
-        except EOFError:         #if the file is corrupted
-
-            if len(id)>len(seq):        #integrity check, if not replace loss with NaN
-                seq.append('NaN')
-                quality.append('NaN')
-            else:
-                quality.append('NaN')
-            print(file+':EOFError')
-
-        df = df.append(pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality}))
-        id.clear(),seq.clear(),quality.clear()
+    try:  # file integrity check
+        df = pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality})
+    except:
+        print('File ' + file_name + ' has been damaged')
+    return df
