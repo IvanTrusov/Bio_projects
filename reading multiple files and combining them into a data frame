@@ -1,42 +1,51 @@
-import gzip
+import pyfastx
 import os
 import multiprocessing
 import pandas as pd
+import time
+start_time=time.time()
 
-def read_gz(file_name):
+def read_gz(file_name,limit=0):
     id, quality, seq = [], [], []
-    with gzip.open(file_name, 'rt', encoding='utf-8') as data:
 
-        try:
-            for strings in data:
-                id.append(strings.strip())
-                seq.append(data.readline().strip())
-                data.readline()
-                quality.append([ord(i)-33 for i in data.readline().strip()])
+    fastq_file = pyfastx.Fastq(file_name, build_index=False)
 
-        except EOFError:  # if the file is corrupted
+    if limit >= 1:
+        n = 0
+        for name, sequence, qual in fastq_file:
+            id.append(name)
+            seq.append(sequence)
+            quality.append(qual)
+            n += 1
+            if n == limit:
+                break
+    else:
+        for name, sequence, qual in fastq_file:
+            id.append(name)
+            seq.append(sequence)
+            quality.append(qual)
 
-            if len(id) > len(seq):  # integrity check, if not replace loss with NaN
-                seq.append('NaN')
-                quality.append('NaN')
-            else:
-                quality.append('NaN')
-            print(file_name + ':EOFError')
+    try:  # file integrity check
+        df = pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality})
+    except:
+        print('File ' + file + ' has been damaged')
+    print("--- %s seconds ---" % (time.time() - start_time))
+    return df
 
-    return pd.DataFrame({'id':id,'seq':seq,'quality':quality})
-    
-data_frame = pd.DataFrame({'id':[],'seq':[],'quality':[]})
-
-files = []
 folder = r'New folder'
 list_of_files = os.listdir(folder)
+files = []
+data_frame = pd.DataFrame({'id': [], 'seq': [], 'quality': []})
+
 for file in list_of_files:
     file_name = folder + str('\\') + str(file)  # gererates path to file
     files.append(file_name)
 
 if __name__ == '__main__':
     with multiprocessing.Pool(len(files)) as pool:
-        print('Results:')
+        print("--- %s seconds ---" % (time.time() - start_time))
         results = pool.map(read_gz, files)
         for i in results:
             data_frame = data_frame.append(i, ignore_index=True)
+    print("--- %s seconds ---" % (time.time() - start_time))
+
