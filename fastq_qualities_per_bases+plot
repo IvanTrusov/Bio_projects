@@ -8,8 +8,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 def plot_fastq_qualities_per_bases(grafic=True, limit=0):
 
-    df = pd.DataFrame(columns=['id', 'Sequence', 'Quality'])
-    id, quality, seq = [], [], []
+    df = pd.DataFrame(columns=['Quality'])
+    quality = []
     folder = r'New folder'
     list_of_files = os.listdir(folder)
 
@@ -20,25 +20,21 @@ def plot_fastq_qualities_per_bases(grafic=True, limit=0):
         if limit>=1:
             n = 0
             for name, sequence, qual in fastq_file:
-                id.append(name)
-                seq.append(sequence)
                 quality.append(qual)
                 n+=1
                 if n == limit:
                     break
         else:
             for name, sequence, qual in fastq_file:
-                id.append(name)
-                seq.append(sequence)
                 quality.append(qual)
 
         try: #file integrity check
-            df = df.append(pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality}))
+            df = df.append(pd.DataFrame({'Quality': quality}))
         except:
             print('File '+ file + ' has been damaged')
             grafic = False
 
-        id.clear(), seq.clear(), quality.clear()
+        quality.clear()
         
     if grafic == True:
         pp = PdfPages('plot_fastq_qualities_per_bases.pdf')  # creating a pdf file
