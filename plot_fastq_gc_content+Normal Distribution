@@ -15,38 +15,33 @@ def normpdf(x, mean, sd):
 
 def plot_fastq_gc_content(grafic=True,limit=0):
 
-    df = pd.DataFrame(columns=['id', 'Sequence', 'Quality'])
-    id, quality, seq = [], [], []
+    df = pd.DataFrame(columns=['Sequence'])
+    seq = []
     folder = r'New folder'
     list_of_files = os.listdir(folder)
-
 
     for file in list_of_files:
         file_name = folder + str('\\') + str(file)  # gererates path to file
         fastq_file = pyfastx.Fastq(file_name, build_index=False)
-
+        
         if limit >= 1:
             n = 0
             for name, sequence, qual in fastq_file:
-                id.append(name)
                 seq.append(sequence)
-                quality.append(qual)
                 n += 1
                 if n == limit:
                     break
         else:
-            for name, sequence, qual in fastq_file:
-                id.append(name)
+            for name, sequence, qual in fastq_file:    
                 seq.append(sequence)
-                quality.append(qual)
 
         try:  # file integrity check
-            df = df.append(pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality}))
+            df = df.append(pd.DataFrame({'Sequence': seq}))
         except:
             print('File ' + file + ' has been damaged')
             grafic = False
 
-        id.clear(), seq.clear(), quality.clear()
+        seq.clear()
 
      if grafic == True:
             pp = PdfPages('plot_fastq_gc_content.pdf')  # creating a pdf file
