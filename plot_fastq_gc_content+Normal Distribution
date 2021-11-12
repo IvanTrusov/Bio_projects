@@ -13,7 +13,7 @@ def normpdf(x, mean, sd):
     num = math.exp(-(float(x)-float(mean))**2/(2*var))
     return num/denom
 
-def plot_fastq_gc_content(grafic=True,limit=0):
+def plot_fastq_gc_content(grafic=True,limit=10000):
 
     df = pd.DataFrame(columns=['Sequence'])
     seq = []
@@ -67,5 +67,5 @@ def plot_fastq_gc_content(grafic=True,limit=0):
             pp.savefig()
             pp.close()
 
-plot_fastq_gc_content(limit=100000)
+plot_fastq_gc_content()
 
