@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
-def plot_fastq_qualities_per_bases(grafic=True, limit=0):
+def plot_fastq_qualities_per_bases(grafic=True, limit=10000):
 
     df = pd.DataFrame(columns=['Quality'])
     quality = []
@@ -73,7 +73,7 @@ def plot_fastq_qualities_per_bases(grafic=True, limit=0):
         pp.close()
     return
 
-plot_fastq_qualities(grafic=True, limit=100000)
+plot_fastq_qualities(grafic=True)
 
 
 
