@@ -48,7 +48,7 @@ def plot_fastq_gc_content(grafic=True,limit=0):
 
         id.clear(), seq.clear(), quality.clear()
 
-        if grafic == True:
+     if grafic == True:
             pp = PdfPages('plot_fastq_gc_content.pdf')  # creating a pdf file
 
             f, ax = plt.subplots(figsize=(12, 5))
