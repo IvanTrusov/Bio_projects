@@ -2,8 +2,6 @@ import pyfastx
 import os
 import multiprocessing
 import pandas as pd
-import time
-start_time=time.time()
 
 def read_gz(file_name,limit=0):
     id, quality, seq = [], [], []
@@ -28,8 +26,7 @@ def read_gz(file_name,limit=0):
     try:  # file integrity check
         df = pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality})
     except:
-        print('File ' + file + ' has been damaged')
-    print("--- %s seconds ---" % (time.time() - start_time))
+        print('File ' + file_name + ' has been damaged')
     return df
 
 folder = r'New folder'
@@ -43,9 +40,7 @@ for file in list_of_files:
 
 if __name__ == '__main__':
     with multiprocessing.Pool(len(files)) as pool:
-        print("--- %s seconds ---" % (time.time() - start_time))
         results = pool.map(read_gz, files)
         for i in results:
             data_frame = data_frame.append(i, ignore_index=True)
-    print("--- %s seconds ---" % (time.time() - start_time))
 
