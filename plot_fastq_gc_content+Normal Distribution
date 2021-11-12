@@ -12,6 +12,7 @@ def normpdf(x, mean, sd):
     denom = (2*math.pi*var)**.5
     num = math.exp(-(float(x)-float(mean))**2/(2*var))
     return num/denom
+
 def plot_fastq_gc_content(grafic=True,limit=0):
 
     df = pd.DataFrame(columns=['id', 'Sequence', 'Quality'])
@@ -46,28 +47,30 @@ def plot_fastq_gc_content(grafic=True,limit=0):
             grafic = False
 
         id.clear(), seq.clear(), quality.clear()
-    if grafic==True:
-        pp = PdfPages('plot_fastq_gc_content.pdf')  # creating a pdf file
 
-        f, ax = plt.subplots(figsize=(12, 5))
+        if grafic == True:
+            pp = PdfPages('plot_fastq_gc_content.pdf')  # creating a pdf file
 
-        gc = pd.DataFrame(((i.count('G') + i.count('C')) / len(i)) * 100 for i in df['Sequence'])
-        gc.hist(ax=ax, bins=150, color='red', grid=False, histtype='step', lw=6)
+            f, ax = plt.subplots(figsize=(12, 5))
 
-        ax.set_xlim((0, 100))
-        plt.xticks(np.arange(0, 105, 5))
-        plt.ylabel('Reads')
-        plt.xlabel('Mean of GC content(%)')
-        x = np.arange(1, 100, .1)
-        f = [normpdf(i, gc.mean(), gc.std()) for i in x]
-        ax2 = ax.twinx()
-        ax2.plot(x, f, label='Normal Distribution')
-        ax2.set_ylim(0, max(f))
-        ax2.axes.get_yaxis().set_ticks([])
-        ax.set_title('GC distribution over all sequences', size=15)
-        plt.legend()
-        
-        pp.savefig()
-        pp.close()
+            gc = pd.DataFrame(((i.count('G') + i.count('C')) / len(i)) * 100 for i in df['Sequence'])
+            gc.hist(ax=ax, bins=150, color='red', grid=False, histtype='step', lw=6)
+
+            ax.set_xlim((0, 100))
+            plt.xticks(np.arange(0, 105, 5))
+            plt.ylabel('Reads')
+            plt.xlabel('Mean of GC content(%)')
+            x = np.arange(1, 100, .1)
+            f = [normpdf(i, gc.mean(), gc.std()) for i in x]
+            ax2 = ax.twinx()
+            ax2.plot(x, f, label='Normal Distribution')
+            ax2.set_ylim(0, max(f))
+            ax2.axes.get_yaxis().set_ticks([])
+            ax.set_title('GC distribution over all sequences', size=15)
+            plt.legend()
+
+            pp.savefig()
+            pp.close()
 
 plot_fastq_gc_content(limit=100000)
+
