@@ -41,7 +41,7 @@ def plot_fastq_qualities_per_bases(grafic=True, limit=0):
         id.clear(), seq.clear(), quality.clear()
         
     if grafic == True:
-        pp = PdfPages('plot_fastq_qualities.pdf')  # creating a pdf file
+        pp = PdfPages('plot_fastq_qualities_per_bases.pdf')  # creating a pdf file
 
         translate_data = pd.DataFrame(
             [int(ord(j) - 33) for j in i] for i in df['Quality'])  # decoding into ASCII_BASE=33
