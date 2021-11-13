@@ -35,8 +35,9 @@ files = []
 data_frame = pd.DataFrame({'id': [], 'seq': [], 'quality': []})
 
 for file in list_of_files:
-    file_name = folder + str('\\') + str(file)  # gererates path to file
-    files.append(file_name)
+    if file.endswith(".gz") or file.endswith(".fastq"):
+        file_name = folder + str('\\') + str(file)
+        fastq_file = pyfastx.Fastq(file_name, build_index=False)
 
 if __name__ == '__main__':
     with multiprocessing.Pool(len(files)) as pool:
