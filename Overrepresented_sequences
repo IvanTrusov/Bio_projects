@@ -1,0 +1,15 @@
+def Overrepresented_sequences(file):
+
+    fastq_file = pyfastx.Fastq(file,build_index=False)
+    sequences =[]
+    
+    for name,seq,qul in fastq_file:
+        sequences.append(seq)
+        
+    overrep = Counter(sequences)
+    df = pd.DataFrame({'Sequence':overrep.keys(),'Count':overrep.values()})
+    
+    df = df.sort_values('Count',ascending=False)
+    df.index = ['']*len(df)
+    
+    return df
