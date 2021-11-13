@@ -1,0 +1,13 @@
+import pandas as pd
+import pyfastx
+
+def Basic_Statistics(file):
+
+    fastq_file = pyfastx.Fastq(file)
+    
+    df = pd.DataFrame([os.path.basename(file),fastq_file.encoding_type,len(fastq_file),
+                       fastq_file.maxlen if fastq_file.maxlen==fastq_file.minlen else str(fastq_file.minlen)+'-'+str(fastq_file.maxlen),
+                       int(fastq_file.gc_content), fastq_file.maxqual if fastq_file.maxqual==fastq_file.minqual else str(fastq_file.minqual)+'-'+str(fastq_file.maxqual)],
+                      ['File name', 'Encoding format', 'Total Sequences','Sequence length','%GC','Quality'])
+    
+    return df.to_string(header=False)
