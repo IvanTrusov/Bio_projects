@@ -13,8 +13,9 @@ def plot_fastq_qualities_per_bases(grafic=True, limit=10000):
     folder = r'New folder'
     list_of_files = os.listdir(folder)
 
-    for file in list_of_files:
-        file_name = folder + str('\\') + str(file)  # gererates path to file
+   for file in list_of_files:
+    if file.endswith(".gz") or file.endswith(".fastq"):
+        file_name = folder + str('\\') + str(file)
         fastq_file = pyfastx.Fastq(file_name, build_index=False)
 
         if limit>=1:
