@@ -74,7 +74,7 @@ def plot_fastq_qualities_per_bases(grafic=True, limit=10000):
         pp.close()
     return
 
-plot_fastq_qualities(grafic=True)
+plot_fastq_qualities_per_bases(grafic=True)
 
 
 
