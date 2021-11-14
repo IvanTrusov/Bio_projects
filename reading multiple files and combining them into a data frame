@@ -1,6 +1,6 @@
 import pyfastx
 import os
-import multiprocessing
+from multiprocessing import Process
 import pandas as pd
 
 def read_gz(file_name,limit=0):
@@ -32,7 +32,7 @@ def read_gz(file_name,limit=0):
 folder = r'New folder'
 list_of_files = os.listdir(folder)
 files = []
-data_frame = pd.DataFrame({'id': [], 'seq': [], 'quality': []})
+limit=10000
 
 for file in list_of_files:
     if file.endswith(".gz") or file.endswith(".fastq"):
@@ -40,7 +40,6 @@ for file in list_of_files:
         files.append(file_name)
 
 if __name__ == '__main__':
-    with multiprocessing.Pool(len(files)) as pool:
-        results = pool.map(read_gz, files)
-        for i in results:
-            data_frame = data_frame.append(i, ignore_index=True)
+    for file in files:
+        proc = Process(target=read_gz, args=(file,limit))
+        proc.start()
