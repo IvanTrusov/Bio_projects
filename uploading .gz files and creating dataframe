@@ -1,28 +1,32 @@
 import pyfastx
+import os
+import multiprocessing
 import pandas as pd
 
-def read_gz(file_name,limit=0):
+def read_gz(file_name):
     id, quality, seq = [], [], []
 
     fastq_file = pyfastx.Fastq(file_name, build_index=False)
 
-    if limit >= 1:
-        n = 0
-        for name, sequence, qual in fastq_file:
-            id.append(name)
-            seq.append(sequence)
-            quality.append(qual)
-            n += 1
-            if n == limit:
-                break
-    else:
-        for name, sequence, qual in fastq_file:
-            id.append(name)
-            seq.append(sequence)
-            quality.append(qual)
-
+    for name, sequence, qual in fastq_file:
+        id.append(name)
+        seq.append(sequence)
+        quality.append(qual)
     try:  # file integrity check
         df = pd.DataFrame({'id': id, 'Sequence': seq, 'Quality': quality})
     except:
         print('File ' + file_name + ' has been damaged')
     return df
+
+folder = r'New folder'
+list_of_files = os.listdir(folder)
+files = []
+
+for file in list_of_files:
+    if file.endswith(".gz") or file.endswith(".fastq"):
+        file_name = folder + str('\\') + str(file)
+        files.append(file_name)
+
+if __name__ == '__main__':
+    with multiprocessing.Pool(len(files)) as pool:
+        results = pool.map(read_gz)
