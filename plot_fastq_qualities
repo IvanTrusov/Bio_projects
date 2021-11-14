@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
-def plot_fastq_qualities(grafic=True):
 
+def plot_fastq_qualities(grafic=True):
     df = pd.DataFrame(columns=['Quality'])
     folder = r'New folder'
     list_of_files = os.listdir(folder)
@@ -26,27 +26,21 @@ def plot_fastq_qualities(grafic=True):
             except:
                 print('File ' + file + ' has been damaged')
                 grafic = False
-                           
-        if grafic == True:
-            pp = PdfPages('plot_fastq_qualities_per_bases.pdf')  # creating a pdf file
 
-            translate_data = Counter(
-                [int(sum([ord(j) - 33 for j in i]) / len(i)) for i in df['Quality']])  # decoding into ASCII_BASE=33
+    if grafic == True:
+        pp = PdfPages('plot_fastq_qualities_per_bases.pdf')  # creating a pdf file
 
-            plt.figure(figsize=(12, 6))
+        translate_data = Counter(
+            [int(sum([ord(j) - 33 for j in i]) / len(i)) for i in df['Quality']])  # decoding into ASCII_BASE=33
 
-            plt.bar(sorted(translate_data.keys()), [translate_data[i] for i in sorted(translate_data.keys())])
+        plt.figure(figsize=(12, 6))
 
-            plt.ylabel('Reads')
-            plt.xlabel('Quality')
-            plt.title('Per sequence quality scores')
+        plt.bar(sorted(translate_data.keys()), [translate_data[i] for i in sorted(translate_data.keys())])
 
-            pp.savefig()
-            pp.close()
+        plt.ylabel('Reads')
+        plt.xlabel('Quality')
+        plt.title('Per sequence quality scores')
+
+        pp.savefig()
+        pp.close()
     return
-plot_fastq_qualities()
-
-
-
-
-
