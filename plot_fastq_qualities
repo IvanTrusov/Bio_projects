@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
-
 def plot_fastq_qualities(grafic=True,path=''):
     df = pd.DataFrame(columns=['Quality'])
     list_of_files = os.listdir(path)
