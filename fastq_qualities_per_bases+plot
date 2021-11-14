@@ -6,37 +6,36 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
-def plot_fastq_qualities_per_bases(grafic=True, limit=10000):
-
+def plot_fastq_qualities_per_bases(grafic=True, limit=10000,path=''):
     df = pd.DataFrame(columns=['Quality'])
     quality = []
-    folder = r'New folder'
-    list_of_files = os.listdir(folder)
+    list_of_files = os.listdir(path)
 
-   for file in list_of_files:
+
+for file in list_of_files:
     if file.endswith(".gz") or file.endswith(".fastq"):
-        file_name = folder + str('\\') + str(file)
+        file_name = path + str('\\') + str(file)
         fastq_file = pyfastx.Fastq(file_name, build_index=False)
 
-        if limit>=1:
+        if limit >= 1:
             n = 0
             for name, sequence, qual in fastq_file:
                 quality.append(qual)
-                n+=1
+                n += 1
                 if n == limit:
                     break
         else:
             for name, sequence, qual in fastq_file:
                 quality.append(qual)
 
-        try: #file integrity check
+        try:  # file integrity check
             df = df.append(pd.DataFrame({'Quality': quality}))
         except:
-            print('File '+ file + ' has been damaged')
+            print('File ' + file + ' has been damaged')
             grafic = False
 
         quality.clear()
-        
+
     if grafic == True:
         pp = PdfPages('plot_fastq_qualities_per_bases.pdf')  # creating a pdf file
 
@@ -74,7 +73,7 @@ def plot_fastq_qualities_per_bases(grafic=True, limit=10000):
         pp.close()
     return
 
-plot_fastq_qualities_per_bases(grafic=True)
+plot_fastq_qualities_per_bases(path='New folder')
 
 
 
