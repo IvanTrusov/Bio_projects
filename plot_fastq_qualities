@@ -8,42 +8,41 @@ from matplotlib.backends.backend_pdf import PdfPages
 def plot_fastq_qualities(grafic=True):
 
     df = pd.DataFrame(columns=['Quality'])
-    quality = []
     folder = r'New folder'
     list_of_files = os.listdir(folder)
 
     for file in list_of_files:
-    if file.endswith(".gz") or file.endswith(".fastq"):
-        file_name = folder + str('\\') + str(file)
-        fastq_file = pyfastx.Fastq(file_name, build_index=False)
+        quality = []
+        if file.endswith(".gz") or file.endswith(".fastq"):
+            file_name = folder + str('\\') + str(file)
 
-        fastq_file = pyfastx.Fastq(file_name, build_index=False)
+            fastq_file = pyfastx.Fastq(file_name, build_index=False)
 
-        for name, sequence, qual in fastq_file:
-            quality.append(qual)
+            for name, sequence, qual in fastq_file:
+                quality.append(qual)
 
-        try: #file integrity check
-            df = df.append(pd.DataFrame({'Quality': quality}))
-        except:
-            print('File '+ file + ' has been damaged')
-            grafic=False
+            try:  # file integrity check
+                df = df.append(pd.DataFrame({'Quality': quality}))
+            except:
+                print('File ' + file + ' has been damaged')
+                grafic = False
+                           
+        if grafic == True:
+            pp = PdfPages('plot_fastq_qualities_per_bases.pdf')  # creating a pdf file
 
-        quality.clear()
-    if grafic == True:
-        pp = PdfPages('plot_fastq_qualities_per_bases.pdf')  # creating a pdf file
+            translate_data = Counter(
+                [int(sum([ord(j) - 33 for j in i]) / len(i)) for i in df['Quality']])  # decoding into ASCII_BASE=33
 
-        translate_data = Counter([int(sum([ord(j)-33 for j in i])/len(i)) for i in df['Quality']])# decoding into ASCII_BASE=33
+            plt.figure(figsize=(12, 6))
 
-        plt.figure(figsize=(12,6))
+            plt.bar(sorted(translate_data.keys()), [translate_data[i] for i in sorted(translate_data.keys())])
 
-        plt.bar(sorted(translate_data.keys()),[translate_data[i] for i in sorted(translate_data.keys())])
+            plt.ylabel('Reads')
+            plt.xlabel('Quality')
+            plt.title('Per sequence quality scores')
 
-        plt.ylabel('Reads')
-        plt.xlabel('Quality')
-        plt.title('Per sequence quality scores')
-
-        pp.savefig()
-        pp.close()
+            pp.savefig()
+            pp.close()
     return
 plot_fastq_qualities()
 
