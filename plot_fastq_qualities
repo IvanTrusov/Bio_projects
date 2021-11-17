@@ -35,7 +35,7 @@ def plot_fastq_qualities(grafic=True,path=''):
 
         plt.bar(sorted(translate_data.keys()), [translate_data[i] for i in sorted(translate_data.keys())])
 
-        plt.ylabel('Reads')
+        plt.ylabel('Number of Reads')
         plt.xlabel('Quality')
         plt.title('Per sequence quality scores')
 
