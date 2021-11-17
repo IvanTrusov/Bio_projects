@@ -6,12 +6,13 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 
-def normpdf(x, mean, sd):
 
-    var = float(sd)**2
-    denom = (2*math.pi*var)**.5
-    num = math.exp(-(float(x)-float(mean))**2/(2*var))
-    return num/denom
+def normpdf(x, mean, sd):
+    var = float(sd) ** 2
+    denom = (2 * math.pi * var) ** .5
+    num = math.exp(-(float(x) - float(mean)) ** 2 / (2 * var))
+    return num / denom
+
 
 def plot_fastq_gc_content(grafic=True, limit=10000, path=''):
     df = pd.DataFrame(columns=['Sequence'])
@@ -39,7 +40,7 @@ def plot_fastq_gc_content(grafic=True, limit=10000, path=''):
             except:
                 print('File ' + file + ' has been damaged')
                 grafic = False
-    
+
     if grafic == True:
         pp = PdfPages('plot_fastq_gc_content.pdf')  # creating a pdf file
 
@@ -50,7 +51,7 @@ def plot_fastq_gc_content(grafic=True, limit=10000, path=''):
 
         ax.set_xlim((0, 100))
         plt.xticks(np.arange(0, 105, 5))
-        plt.ylabel('Reads')
+        plt.ylabel('Number of reads')
         plt.xlabel('Mean of GC content(%)')
         x = np.arange(1, 100, .1)
         f = [normpdf(i, gc.mean(), gc.std()) for i in x]
@@ -64,5 +65,5 @@ def plot_fastq_gc_content(grafic=True, limit=10000, path=''):
         pp.savefig()
         pp.close()
 
-plot_fastq_gc_content(path='New folder)
 
+plot_fastq_gc_content(path='New folder')
