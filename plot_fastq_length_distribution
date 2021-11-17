@@ -1,0 +1,49 @@
+import pyfastx
+import os
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.backends.backend_pdf import PdfPages
+
+def plot_fastq_length_distribution(grafic=True,path=''):
+
+    df = pd.DataFrame(columns=['Length'])
+    l = []
+    list_of_files = os.listdir(path)
+
+    for file in list_of_files:
+        if file.endswith(".gz") or file.endswith(".fastq"):
+            file_name = path + str('\\') + str(file)
+            fastq_file = pyfastx.Fastq(file_name, build_index=False)
+
+            for name, sequence, qual in fastq_file:
+                l.append(len(sequence))
+
+            try:  # file integrity check
+                df = df.append(pd.DataFrame({'Length': l}))
+            except:
+                print('File ' + file + ' has been damaged')
+                grafic = False
+
+        if grafic == True:
+            pp = PdfPages('plot_fastq_length_distribution.pdf')  # creating a pdf file
+
+            sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                        'figure.facecolor': 'white'})
+
+            ax = sns.displot(data=df,x='Length',color='blue')
+            ax.fig.set_figheight(7)
+            ax.fig.set_figwidth(12)
+
+            plt.xticks(np.arange(0,df['Length'].max()+5,5))
+
+            plt.xlabel('Length')
+            plt.ylabel('Number of reads')
+            plt.title('Length Distribution')
+
+            pp.savefig()
+            pp.close()
+
+        return
+plot_fastq_length_distribution(path='New folder')
