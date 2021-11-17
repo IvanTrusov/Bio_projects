@@ -48,7 +48,7 @@ def plot_fastq_base_content(grafic=True,path=''):
 
             plt.yticks(np.arange(0,110,10))
             plt.xticks(range(-1,100, 5))
-            plt.xlabel('position in read')
+            plt.xlabel('position in read(bp)')
             plt.ylabel('Procent')
             plt.title('Base content')
 
