@@ -1,0 +1,62 @@
+import pyfastx
+import os
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.backends.backend_pdf import PdfPages
+
+def plot_fastq_base_content(grafic=True,path=''):
+
+    seq = []
+    n = 0
+    list_of_files = os.listdir(path)
+
+    for file in list_of_files:
+
+        if file.endswith(".gz") or file.endswith(".fastq"):
+            file_name = path + str('\\') + str(file)
+            fastq_file = pyfastx.Fastq(file_name, build_index=False)
+
+            for name, sequence, qual in fastq_file:
+                seq.append(list(sequence))
+                n+=1
+                if n==10000:
+                    break
+
+            try:  # file integrity check
+                df = pd.DataFrame(seq)
+                df = df.T
+                df = df.apply("".join, axis=1)
+
+            except:
+                print('File ' + file + ' has been damaged')
+                grafic = False
+
+        if grafic == True:
+            pp = PdfPages('plot_fastq_base_content.pdf')  # creating a pdf file
+
+            content = pd.DataFrame({'A':[int((i.count('A')/len(i))*100) for i in df],'C':[int((i.count('C')/len(i))*100) for i in df],
+                                    'G':[int((i.count('G')/len(i))*100) for i in df],'T':[int((i.count('T')/len(i))*100) for i in df]})
+            content.index+=1
+            
+            sns.set(rc={'axes.facecolor': 'black',
+                        'figure.facecolor': 'white'})
+
+            content.plot(kind='bar',stacked=True,figsize=(12, 5),rot=0, lw=0, color=['g','r','b','y'])\
+                .legend(bbox_to_anchor=(1, 1),facecolor='white')
+
+            plt.yticks(np.arange(0,110,10))
+            plt.xticks(range(-1,100, 5))
+            plt.xlabel('position in read')
+            plt.ylabel('Procent')
+            plt.title('Base content')
+
+            pp.savefig()
+            pp.close()
+
+        return
+plot_fastq_base_content(path='New folder')
+
+
+
