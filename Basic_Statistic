@@ -1,5 +1,6 @@
 import pandas as pd
 import pyfastx
+import os
 
 def Basic_Statistics(file):
 
