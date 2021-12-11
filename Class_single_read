@@ -1,0 +1,311 @@
+import pandas as pd
+import os
+import pyfastx
+from collections import Counter
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+from Support_Class import *
+
+
+class statistical_analysis_single():
+
+    def __init__(self,path):
+
+        self.path = path
+
+
+
+    def Basic_Statistics(self):
+
+        if os.path.basename(self.path).endswith(".gz") or os.path.basename(self.path).endswith(".fastq"):
+
+            try:
+                Support_class().B_S(self.path)
+                return os.remove(self.path + '.fxi')
+
+            except:
+                return print('File ' + os.path.basename(self.path) + ' has been damaged')
+
+        return print('The pass must be to gz/fastq file(s)')
+
+
+
+    def Overrepresented_sequences(self):
+
+        if os.path.basename(self.path).endswith(".gz") or os.path.basename(self.path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(self.path, build_index=False)
+
+            sequences = []
+
+            for name, seq, qul in fastq_file:
+                sequences.append(seq)
+
+            overrep = Counter(sequences)
+            df = pd.DataFrame({'Sequence': overrep.keys(), 'Count': overrep.values()})
+
+            df = df.sort_values('Count', ascending=False)
+            df.index = [''] * len(df)
+
+            return print('\t',os.path.basename(self.path),'\n',df)
+
+        print('The pass must be to gz/fastq file(s)')
+
+
+
+    def Base_content(self):
+
+        if os.path.basename(self.path).endswith(".gz") or os.path.basename(self.path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(self.path, build_index=False)
+
+            seq = []
+            n = 0
+
+            for name, sequence, qual in fastq_file:
+                seq.append(list(sequence))
+                n += 1
+                if n == 100000:
+                    break
+
+            df = pd.DataFrame(seq)
+            df = df.T
+            df = df.apply("".join, axis=1)
+        else:
+            return print('The pass must be to gz/fastq file(s)')
+
+        content = pd.DataFrame({'A': [int((i.count('A') / len(i)) * 100) for i in df],
+                                'C': [int((i.count('C') / len(i)) * 100) for i in df],
+                                'G': [int((i.count('G') / len(i)) * 100) for i in df],
+                                'T': [int((i.count('T') / len(i)) * 100) for i in df]})
+        content.index += 1
+
+        x_ace = []
+        s=0
+        a,c,g,t = 0,0,0,0
+
+        for i in range(len(content['A'])):
+
+            if (content.iloc[i,0]==a or content.iloc[i,0]+1==a or content.iloc[i,0]==a+1)\
+                    and (content.iloc[i,1]==c or content.iloc[i,1]+1==c or content.iloc[i,1]==c+1)\
+                    and (content.iloc[i,2]==g or content.iloc[i,2]+1==g or content.iloc[i,2]==g+1)\
+                    and (content.iloc[i,3]==t or content.iloc[i,3]+1==t or content.iloc[i,3]==t+1):
+
+                s+=1
+
+            else:
+                x_ace.append(s)
+                a = content.iloc[i, 0]
+                c = content.iloc[i, 1]
+                g = content.iloc[i, 2]
+                t = content.iloc[i, 3]
+                s = 1
+
+            if i == len(content['A']) - 1:
+                x_ace.append(s)
+
+        s = 0
+        X = []
+
+        for i in x_ace:
+            s+=i
+
+            if i ==1:
+                X.append(str(s))
+
+            elif i<5 and i>1:
+                for j in range(1,i):
+                    content.drop(index=[s-j],inplace=True)
+                X.append(str(s-i+1))
+
+            elif i>=5:
+                for j in range(1,i):
+                    content.drop(index=[s-j], inplace=True)
+                line = str(s-i+1)+'-'+str(s)
+                X.append(line)
+
+
+        sns.set(rc={'axes.facecolor': 'black',
+                    'figure.facecolor': 'white'})
+
+        content['X'] = X
+
+        content[['A','C','G','T','X']].plot(kind='bar',x = 'X', stacked=True, figsize=(12, 5), rot=0, lw=0, color=['g', 'r', 'b', 'y']) \
+            .legend(bbox_to_anchor=(1, 1), facecolor='white')
+
+        plt.yticks(np.arange(0, 110, 10))
+        plt.xticks(range(0, len(X),len(X)//18))
+        #plt.xlim(1,len(X))
+        plt.xlabel('position in read(bp)')
+        plt.ylabel('Procent')
+        plt.title('Base content ('+os.path.basename(self.path)+')')
+
+        return plt.show()
+
+
+
+    def GC_content(self):
+
+        if os.path.basename(self.path).endswith(".gz") or os.path.basename(self.path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(self.path, build_index=False)
+
+            seq = []
+            n = 0
+
+            for name, sequence, qual in fastq_file:
+                seq.append(sequence)
+                n += 1
+                if n == 100000:
+                    break
+
+        else:
+            return print('The pass must be to gz/fastq file(s)')
+
+        f, ax = plt.subplots(figsize=(12, 5))
+
+        gc = pd.DataFrame(int(((i.count('G') + i.count('C')) / len(i)) * 100) for i in seq)
+        gc.hist(ax=ax, bins=100, color='red', grid=False, histtype='step', lw=3)
+
+        ax.set_xlim((0, 100))
+        plt.xticks(np.arange(0, 105, 5))
+
+        plt.ylabel('Number of reads')
+        plt.xlabel('Mean of GC content(%)')
+
+        x = np.arange(1, 100, .1)
+        f = [Support_class().normpdf(i, gc.mean(), gc.std()) for i in x]
+
+        ax2 = ax.twinx()
+        ax2.plot(x, f, label='Normal Distribution')
+        ax2.set_ylim(0, max(f))
+        ax2.axes.get_yaxis().set_ticks([])
+
+        title = str('GC distribution over all sequences ('+os.path.basename(self.path)+')')
+        ax.set_title(title, size=15)
+
+        plt.legend()
+
+        return plt.show()
+
+
+
+    def Length_distribution(self):
+
+        if os.path.basename(self.path).endswith(".gz") or os.path.basename(self.path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(self.path, build_index=False)
+
+            l = []
+
+            for name, sequence, qual in fastq_file:
+                if len(sequence)>0:
+                    l.append(len(sequence))
+
+        else:
+            return print('The pass must be to gz/fastq file(s)')
+
+        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                   'figure.facecolor': 'white'})
+
+        Length = Counter(l)
+        plt.bar(sorted(Length.keys()), [Length[i] for i in sorted(Length.keys())],width = 5)
+
+        if len(Length.keys())>1:
+            plt.xticks(np.arange(min(Length.keys()), max(Length.keys()) + 10, 10))
+        else:
+            plt.xticks(np.arange(1, max(Length.keys())+max(Length.keys())//10, max(Length.keys())//10))
+
+        plt.xlim(1,max(Length.keys())+5)
+        plt.xlabel('Length')
+        plt.ylabel('Number of reads')
+        plt.title('Length Distribution ('+os.path.basename(self.path)+')')
+
+        return plt.show()
+
+    def Qualitie(self):
+
+        if os.path.basename(self.path).endswith(".gz") or os.path.basename(self.path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(self.path, build_index=False)
+
+            quality = []
+
+            for name, sequence, qual in fastq_file:
+                    quality.append(qual)
+
+        else:
+            return print('The pass must be to gz/fastq file(s)')
+
+        translate_data = Counter([int(sum([ord(j) - 33 for j in i]) / len(i)) for i in quality])  # decoding into ASCII_BASE=33
+
+        plt.figure(figsize=(12, 6))
+
+        plt.bar(sorted(translate_data.keys()), [translate_data[i] for i in sorted(translate_data.keys())])
+
+        plt.ylabel('Number of Reads')
+        plt.xlabel('Quality')
+        plt.title('Per sequence quality scores ('+os.path.basename(self.path)+')')
+
+        return plt.show()
+
+
+
+    def Qualities_per_bases(self):
+
+        if os.path.basename(self.path).endswith(".gz") or os.path.basename(self.path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(self.path, build_index=False)
+
+            quality = []
+            n = 0
+
+            for name, sequence, qual in fastq_file:
+                quality.append(qual)
+                n += 1
+                if n == 100000:
+                    break
+
+        else:
+            return print('The pass must be to gz/fastq file(s)')
+
+        translate_data = pd.DataFrame(
+            [int(ord(j) - 33) for j in i] for i in quality)  # decoding into ASCII_BASE=33
+
+        l = len(translate_data.T) +1
+
+        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                    'figure.facecolor': 'white'})
+
+        mean = translate_data.mean().astype(int)
+        pd.set_option("display.max_rows", None)
+        print(mean)
+
+        translate_data.columns = [i for i in range(1, l)]
+
+        ax = sns.catplot(data=translate_data, kind='box', showfliers=False, color="blue")
+        ax.fig.set_figheight(7)
+        ax.fig.set_figwidth(12)
+
+        sns.lineplot(data=mean, color='black')
+
+        plt.xticks(np.arange(-1, l, 5))
+        plt.yticks(np.arange(0, max(translate_data.max()), 2))
+        plt.xlabel('Position in read(bp)')
+        plt.ylabel('Quality')
+        plt.xlim((0, l-1))
+        plt.ylim((0, max(translate_data.max())))
+        plt.title('Quality scores across all bases ('+os.path.basename(self.path)+')')
+
+        plt.plot((np.arange(0, l)), [20 for i in (np.arange(0, l))], color="r", linewidth=2)
+        plt.plot((np.arange(0, l)), [28 for i in (np.arange(0, l))], color="green", linewidth=2)
+
+        return plt.show()
+
+
+
+test = statistical_analysis_single('New folder\\file.fastq.gz')
+
+#test.Basic_Statistics()
+#test.Overrepresented_sequences()
+#test.Length_distribution()
+#test.Qualities_per_bases()
+#test.Qualitie()
+#test.GC_content()
+#test.Base_content()
