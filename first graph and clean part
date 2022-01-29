@@ -1,0 +1,428 @@
+import pandas as pd
+import os
+import pyfastx
+from collections import Counter
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+from Support_Class import *
+import PyPDF2
+import time
+import multiprocessing
+
+start_time = time.time()
+
+
+def Basic_Statistic(path, process=0):
+    if process == 0:
+
+        pdf = PdfPages(os.path.dirname(path) + '\\Basic Statistic of ' + os.path.basename(path) + '.pdf')
+
+        if os.path.basename(path).endswith(".gz") or os.path.basename(path).endswith(".fastq"):
+
+            try:
+                Support_class().B_S_1(path, pdf)
+                pdf.close()
+                return os.remove(path + '.fxi')
+
+            except:
+                return print('File ' + os.path.basename(path) + ' has been damaged')
+
+        return print('The pass must be to gz/fastq file(s)')
+
+
+def grafics_block(process, path, data_list):
+    if process == 1:
+        pdf1 = PdfPages("PDF\\Length Distribution+table.pdf")
+
+        if os.path.basename(path).endswith(".gz") or os.path.basename(path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(path, build_index=False)
+
+            sequences = []
+            l = []
+
+            for name, seq, qul in fastq_file:
+                sequences.append(seq)
+                l.append(len(seq))
+
+            overrep = Counter(sequences)
+            all = len(sequences)
+            df = pd.DataFrame({'Sequence': overrep.keys(), 'Count': overrep.values(),
+                               'Percentage': [round((i / all) * 100, 15) for i in overrep.values()]})
+
+            df = df.sort_values('Count', ascending=False)
+
+            # data_list.overrepr_df = df[df['Percentage'] > 0.1][['Sequence', 'Percentage']]
+            # data_list.sequences = sequences[:]
+            sequences.clear()
+
+            # df.to_csv(os.path.dirname(path)+'\\'+os.path.basename(path)+'.csv', index=False)
+
+            df_over_1 = df[df['Percentage'] > 0.1]
+
+            if len(df_over_1)>0:
+                df_over = pd.DataFrame({'Sequence': [str(i[:15] + '...' + i[-15:]) for i in df_over_1['Sequence']],
+                                        'Count': df_over_1['Count'],
+                                        'Percentage(%)': [str(i) for i in df_over_1['Percentage']]})
+
+                fig = plt.figure(figsize=(12, (len(df_over.values) / 4)))
+                ax = plt.subplot()
+                ax.axis('off')
+                table = ax.table(colLabels=df_over.columns, colColours=['blue'] * 3, cellText=df_over.values,
+                                 cellColours=[['lightgray'] * 3] * len(df_over.values), cellLoc='center', loc='center',
+                                 bbox=[-0.12, 0, 1.2, 1], colWidths=[8 for i in df_over.values])
+
+                table.set_fontsize(11)
+                plt.title('Overrepresented sequences (' + os.path.basename(path) + ')', fontsize=14)
+                pdf1.savefig()
+            else:
+                fig = plt.figure(figsize=(12,3))
+                plt.title('There are no overrepresented sequences in ' + os.path.basename(path), fontsize=14, pad=-10)
+                plt.axis('off')
+                pdf1.savefig()
+
+            sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                        'figure.facecolor': 'white'})
+
+            Length = Counter(l)
+            plt.figure(figsize=(12, 6))
+            plt.bar(sorted(Length.keys()), [Length[i] for i in sorted(Length.keys())], width=1,color="blue")
+
+            if len(Length.keys()) > 1:
+                plt.xticks(np.arange(min(Length.keys()), max(Length.keys()) + 10, 10))
+            else:
+                plt.xticks(np.arange(1, max(Length.keys()) + max(Length.keys()) // 10, max(Length.keys()) // 10))
+
+            plt.xlim(1, max(Length.keys()) + 5)
+            plt.xlabel('Length')
+            plt.ylabel('Number of reads')
+            plt.title('Length Distribution (' + os.path.basename(path) + ')')
+
+            pdf1.savefig()
+            pdf1.close()
+
+            return
+
+        print('The pass must be to gz/fastq file(s)')
+
+    if process == 2:
+        pdf2 = PdfPages("PDF\\Base content.pdf")
+
+        if os.path.basename(path).endswith(".gz") or os.path.basename(path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(path, build_index=False)
+
+            seq = []
+            n = 0
+
+            for name, sequence, qual in fastq_file:
+                seq.append(list(sequence))
+                n += 1
+                if n == 100000:
+                    break
+
+            df = pd.DataFrame(seq)
+            seq.clear()
+            df = df.T
+            df = df.apply("".join, axis=1)
+        else:
+            return print('The pass must be to gz/fastq file(s)')
+
+        content = pd.DataFrame({'A': [int((i.count('A') / len(i)) * 100) for i in df],
+                                'C': [int((i.count('C') / len(i)) * 100) for i in df],
+                                'G': [int((i.count('G') / len(i)) * 100) for i in df],
+                                'T': [int((i.count('T') / len(i)) * 100) for i in df]})
+        content.index += 1
+
+        x_ace = []
+        s = 0
+        a, c, g, t = 0, 0, 0, 0
+
+        for i in range(len(content['A'])):
+
+            if (content.iloc[i, 0] == a or content.iloc[i, 0] + 1 == a or content.iloc[i, 0] == a + 1) \
+                    and (content.iloc[i, 1] == c or content.iloc[i, 1] + 1 == c or content.iloc[i, 1] == c + 1) \
+                    and (content.iloc[i, 2] == g or content.iloc[i, 2] + 1 == g or content.iloc[i, 2] == g + 1) \
+                    and (content.iloc[i, 3] == t or content.iloc[i, 3] + 1 == t or content.iloc[i, 3] == t + 1):
+
+                s += 1
+
+            else:
+                x_ace.append(s)
+                a = content.iloc[i, 0]
+                c = content.iloc[i, 1]
+                g = content.iloc[i, 2]
+                t = content.iloc[i, 3]
+                s = 1
+
+            if i == len(content['A']) - 1:
+                x_ace.append(s)
+
+        s = 0
+        X = []
+
+        for i in x_ace:
+            s += i
+
+            if i == 1:
+                X.append(str(s))
+
+            elif i < 5 and i > 1:
+                for j in range(1, i):
+                    content.drop(index=[s - j], inplace=True)
+                X.append(str(s - i + 1))
+
+            elif i >= 5:
+                for j in range(1, i):
+                    content.drop(index=[s - j], inplace=True)
+                line = str(s - i + 1) + '-' + str(s)
+                X.append(line)
+
+        sns.set(rc={'axes.facecolor': 'black', 'figure.facecolor': 'white'})
+
+        content['X'] = X
+        content['N'] = content[['A', 'C', 'G', 'T']].sum(axis=1).apply(lambda x: 100 - x)
+
+        content[['A', 'C', 'G', 'T', 'X', 'N']].plot(kind='bar', x='X', stacked=True, figsize=(12, 5), rot=0, lw=0,
+                                                     color=['g', 'r', 'b', 'y', 'gray']) \
+            .legend(bbox_to_anchor=(1, 1), facecolor='white')
+
+        plt.yticks(np.arange(0, 110, 10))
+        plt.xticks(range(0, len(X), len(X) // 18))
+        # plt.xlim(1,len(X))
+        plt.xlabel('position in read(bp)')
+        plt.ylabel('Procent')
+        plt.title('Base content (' + os.path.basename(path) + ')')
+
+        pdf2.savefig()
+        pdf2.close()
+
+        return
+
+    if process == 3:
+        pdf3 = PdfPages("PDF\\GC distribution over all sequences.pdf")
+
+        if os.path.basename(path).endswith(".gz") or os.path.basename(path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(path, build_index=False)
+
+            seq = []
+            n = 0
+
+            for name, sequence, qual in fastq_file:
+                seq.append(sequence)
+                n += 1
+                if n == 100000:
+                    break
+
+        else:
+            return print('The pass must be to gz/fastq file(s)')
+
+        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                     'figure.facecolor': 'white'})
+
+        f, ax = plt.subplots(figsize=(12, 6))
+
+        gc_list = [int(((i.count('G') + i.count('C')) / len(i)) * 100) for i in seq]
+        seq.clear()
+
+        gc = pd.DataFrame(gc_list)
+        gc_gr = Counter(gc_list)
+
+        ax.bar(sorted(gc_gr.keys()),[gc_gr[i] for i in sorted(gc_gr.keys())], color="blue",width=1)
+
+        ax.set_xlim((0, 100))
+        plt.xticks(np.arange(0, 100, 3))
+
+        plt.ylabel('Number of reads')
+        plt.xlabel('Mean of GC content(%)')
+
+        x = np.arange(1, 100, 0.1)
+        f = [Support_class().normpdf(i, gc.mean(), gc.std()) for i in x]
+
+        ax2 = ax.twinx()
+        ax2.plot(x, f, label='Normal Distribution', color='red')
+        ax2.set_ylim(0, max(f))
+        ax2.axes.get_yaxis().set_ticks([])
+
+        title = str('GC distribution over all sequences (' + os.path.basename(path) + ')')
+        ax.set_title(title, size=15)
+
+        plt.legend(facecolor='white')
+
+        pdf3.savefig()
+        pdf3.close()
+
+        return
+
+    if process == 4:
+        pdf4 = PdfPages("PDF\\Per sequence quality scores.pdf")
+
+        if os.path.basename(path).endswith(".gz") or os.path.basename(path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(path, build_index=False)
+
+            quality = []
+
+            for name, sequence, qual in fastq_file:
+                quality.append(qual)
+
+        else:
+            return print('The pass must be to gz/fastq file(s)')
+
+        translate_data_mean = [int(sum([ord(j) - 33 for j in i]) / len(i)) for i in
+                               quality]  # decoding into ASCII_BASE=33
+        quality.clear()
+        #data_list.mean_quality = translate_data_mean
+        translate_data_mean = Counter(translate_data_mean)
+
+        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                    'figure.facecolor': 'white'})
+
+        plt.figure(figsize=(12, 6))
+
+        plt.bar(sorted(translate_data_mean.keys()),
+                [translate_data_mean[i] for i in sorted(translate_data_mean.keys())],color="blue")
+
+        plt.ylabel('Number of Reads')
+        plt.xlabel('Quality')
+        plt.title('Per sequence quality scores (' + os.path.basename(path) + ')')
+
+        pdf4.savefig()
+        pdf4.close()
+
+        return
+
+    if process == 5:
+        pdf5 = PdfPages("PDF\\Quality scores across all bases.pdf")
+
+        if os.path.basename(path).endswith(".gz") or os.path.basename(path).endswith(".fastq"):
+            fastq_file = pyfastx.Fastq(path, build_index=False)
+
+            quality = []
+            n = 0
+
+            for name, sequence, qual in fastq_file:
+                quality.append(qual)
+                n += 1
+                if n == 100000:
+                    break
+
+        else:
+            return print('The pass must be to gz/fastq file(s)')
+
+        translate_data = pd.DataFrame([(ord(j) - 33) for j in i] for i in quality)  # decoding into ASCII_BASE=33
+        quality.clear()
+
+        l = len(translate_data.T) + 1
+
+        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                    'figure.facecolor': 'white'})
+
+        mean = translate_data.mean()
+        # pd.set_option("display.max_rows", None)
+
+        translate_data.columns = [i for i in range(1, l)]
+
+        ax = sns.catplot(data=translate_data, kind='box', showfliers=False, color="blue")
+        ax.fig.set_figheight(7)
+        ax.fig.set_figwidth(12)
+
+        sns.lineplot(data=mean, color='black')
+
+        plt.xticks(np.arange(-1, l, 5))
+        plt.yticks(np.arange(0, max(translate_data.max()), 2))
+        plt.xlabel('Position in read(bp)')
+        plt.ylabel('Quality')
+        plt.xlim((0, l - 1))
+        plt.ylim((0, max(translate_data.max())))
+        plt.title('Quality scores across all bases (' + os.path.basename(path) + ')')
+
+        plt.plot((np.arange(0, l)), [20 for i in (np.arange(0, l))], color="r", linewidth=2)
+        plt.plot((np.arange(0, l)), [28 for i in (np.arange(0, l))], color="green", linewidth=2)
+
+        pdf5.savefig()
+        pdf5.close()
+
+        return
+
+
+def clean_block(process, path):
+    # over_seq = data_list.overrepr_df['Sequence'].tolist()
+
+    if process == 0:
+        with open('New folder\\sequnces.txt', 'r') as seq_r:
+            seq = []
+            for i in seq_r:
+                seq.append(i.strip())
+            sequnces = pd.DataFrame({'Sequences': seq,'N':[i.count('N') for i in seq]})
+            len_seq = len(seq[0])
+
+        with open('New folder\\quality.txt', 'r') as qual_r:
+            qual = []
+            for i in qual_r:
+                qual.append(int(i.strip()))
+            quality = pd.DataFrame({'Quality': qual})
+
+        overrepr_df = pd.read_csv('New folder\\overrepr_df.csv')
+
+        overrepr_df = overrepr_df[overrepr_df['Percentage'] > 0]
+
+        data_df = pd.concat([sequnces, quality], axis=1)
+        data_df = data_df[data_df['Quality'] > 20]
+        data_df = data_df[data_df['N']<=int(len_seq*0.01)].reset_index(drop=True)
+        data_df = data_df.loc[~data_df['Sequences'].isin(overrepr_df['Sequence'].tolist())]
+
+        #adapters part
+        adapters = []
+        import re
+        motif = 'GATCGTCGGACT'
+        for seq in data_df['Sequences']:
+            if seq.find(motif) >= 0:
+                [adapters.append(i.start() + 1) for i in re.finditer("(?=" + motif + ")", seq)]
+    
+
+
+
+if __name__ == '__main__':
+    path = 'New folder\\file.fastq.gz'
+
+    grafics = [1,2,3,4,5]
+    manager = multiprocessing.Manager()
+    data_list = manager.Namespace()
+
+
+    processes = [multiprocessing.Process(target=grafics_block, args=(process, path, data_list)) for process in grafics]
+
+    #processes = [multiprocessing.Process(target=graficsblock, args=(process,path,)) for process in grafics]
+    # this part for Basic Statistic only, when grafics list = 0.
+
+    for process in processes:
+        process.start()
+
+    for process in processes:
+        process.join()
+
+    files = os.listdir('PDF')
+
+    merger = PyPDF2.PdfFileMerger()
+
+    for filename in files:
+        merger.append(fileobj=open(os.path.join('PDF', filename), 'rb'))
+
+    merger.write(open(os.path.join(os.path.dirname(path), os.path.basename(path) + '.pdf'), 'wb'))
+
+    data_list.overrepr_df.to_csv(os.path.dirname(path) + '\\' + 'overrepr_df' + '.csv', index=False)
+
+    # with open('New folder\\sequnces.txt', 'w') as seq_w:
+    #     for element in data_list.sequences:
+    #         seq_w.write(element)
+    #         seq_w.write('\n')
+    # 
+    # with open('New folder\\quality.txt', 'w') as qual_w:
+    #     for element in data_list.mean_quality:
+    #         qual_w.write(str(element))
+    #         qual_w.write('\n')
+
+    clean_block(0, path)
+    print("--- %s seconds ---" % (time.time() - start_time))
+
+    # n = input('Print y to start cleaning'+'\n')
