@@ -29,7 +29,7 @@ def Basic_Statistic(path, process=0):
         return print('The pass must be to gz/fastq file(s)')
 
 
-def grafics_block(process, path):
+def graphic_block(process, path):
 
     if process == 1:
         pdf1 = PdfPages("PDF\\Overrepresented_table.pdf")
