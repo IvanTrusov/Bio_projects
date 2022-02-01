@@ -8,8 +8,12 @@ import numpy as np
 import math
 from Support_Class import *
 import PyPDF2
+import time
 import multiprocessing
 import re
+
+start_time = time.time()
+
 
 def Basic_Statistic(path, process=0):
     if process == 0:
@@ -29,7 +33,7 @@ def Basic_Statistic(path, process=0):
         return print('The pass must be to gz/fastq file(s)')
 
 
-def graphic_block(process, path):
+def grafics_block(process, path):
 
     if process == 1:
         pdf1 = PdfPages("PDF\\Overrepresented_table.pdf")
@@ -56,6 +60,7 @@ def graphic_block(process, path):
                            'Percentage': [round((i / all) * 100, 6) for i in overrep.values()]})
 
         df = df.sort_values('Count', ascending=False)
+
         sequences.clear()
 
         df_over_1 = df[df['Percentage'] > 0.1]
@@ -114,7 +119,7 @@ def graphic_block(process, path):
                                 'T': [int((i.count('T') / len(i)) * 100) for i in df]})
         content.index += 1
 
-        x_ace = []
+        x_ax = []
         s = 0
         a, c, g, t = 0, 0, 0, 0
 
@@ -128,7 +133,7 @@ def graphic_block(process, path):
                 s += 1
 
             else:
-                x_ace.append(s)
+                x_ax.append(s)
                 a = content.iloc[i, 0]
                 c = content.iloc[i, 1]
                 g = content.iloc[i, 2]
@@ -136,25 +141,25 @@ def graphic_block(process, path):
                 s = 1
 
             if i == len(content['A']) - 1:
-                x_ace.append(s)
+                x_ax.append(s)
 
         s = 0
         X = []
+        k = 5
 
-        for i in x_ace:
+        if len(x_ax) <= 12:
+            k = 8
+
+        for i in x_ax:
             s += i
 
-            if i == 1:
-                X.append(str(s))
+            if i < k:
+                for j in range(1, i + 1):
+                    X.append(str(s - i + j))
 
-            elif i < 5 and i > 1:
+            elif i >= k:
                 for j in range(1, i):
-                    content.drop(index=[s - j], inplace=True)
-                X.append(str(s - i + 1))
-
-            elif i >= 5:
-                for j in range(1, i):
-                    content.drop(index=[s - j], inplace=True)
+                    content.drop(columns=[s - j], inplace=True)
                 line = str(s - i + 1) + '-' + str(s)
                 X.append(line)
 
@@ -167,8 +172,8 @@ def graphic_block(process, path):
                                                      color=['g', 'r', 'b', 'y', 'gray']) \
             .legend(bbox_to_anchor=(1, 1), facecolor='white')
 
+        plt.xticks(range(0, len(X), int(len(X)*.05+0.5)))
         plt.yticks(np.arange(0, 110, 10))
-        plt.xticks(range(0, len(X), len(X) // 18))
         plt.xlabel('position in read(bp)')
         plt.ylabel('Percentage')
         plt.title('Base content (' + os.path.basename(path) + ')')
@@ -196,8 +201,9 @@ def graphic_block(process, path):
         else:
             return print('The pass must be to gz/fastq file(s)')
 
-        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
-                    'figure.facecolor': 'white'})
+        sns.set_theme(style='ticks', rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                                         'figure.facecolor': 'white', 'axes.grid': False, 'grid.color': 'white',
+                                         'grid.linestyle': '-'})
 
         plt.figure(figsize=(12, 6))
 
@@ -211,6 +217,7 @@ def graphic_block(process, path):
         y = [round(gc_gr[i] / 1000, 2) for i in x]
 
         plt.bar(x, y, color="blue", width=1)
+        plt.grid(axis='both')
 
         plt.ylabel('Percentage')
         plt.xlabel('Mean of GC content(%)')
@@ -253,14 +260,16 @@ def graphic_block(process, path):
         
         translate_data_mean = Counter(translate_data_mean)
 
-        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
-                    'figure.facecolor': 'white'})
+        sns.set_theme(style='ticks', rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                                         'figure.facecolor': 'white', 'axes.grid': False, 'grid.color': 'white',
+                                         'grid.linestyle': '-'})
 
         plt.figure(figsize=(12, 6))
 
         plt.bar(sorted(translate_data_mean.keys()),
                 [round(translate_data_mean[i] / 1000, 2) for i in sorted(translate_data_mean.keys())], color="blue")
 
+        plt.grid(axis='both')
         plt.ylabel('Percentage')
         plt.xlabel('Quality')
         plt.title('Per sequence quality scores (' + os.path.basename(path) + ')')
@@ -293,35 +302,78 @@ def graphic_block(process, path):
 
         l = len(translate_data.T) + 1
 
-        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
-                    'figure.facecolor': 'white'})
+        translate_data.columns = [i for i in range(1, l)]
+
+        q3 = np.percentile(translate_data[1].tolist(), 75)
+        q1 = np.percentile(translate_data[1].tolist(), 25)
+        x_ax = []
+        s = 1
+
+        for i in range(2, l):
+            q3_ = np.percentile(translate_data[i].tolist(), 75)
+            q1_ = np.percentile(translate_data[i].tolist(), 25)
+
+            if q3_ == q3 and q1_ == q1 and s < 15:
+                s += 1
+            else:
+                q3 = q3_
+                q1 = q1_
+                x_ax.append(s)
+                s = 1
+            if i == l - 1:
+                x_ax.append(s)
+
+        s = 0
+        X = []
+        k = 5
+
+        if len(x_ax) <= 12:
+            k = 8
+
+        for i in x_ax:
+            s += i
+
+            if i < k:
+                for j in range(1, i + 1):
+                    X.append(str(s - i + j))
+
+            elif i >= k:
+                for j in range(1, i):
+                    translate_data.drop(columns=[s - j], inplace=True)
+                line = str(s - i + 1) + '-' + str(s)
+                X.append(line)
+
+        translate_data.columns = X
 
         mean = translate_data.mean()
-        # pd.set_option("display.max_rows", None)
+        mean.index = [i for i in range(0, len(mean))]
 
-        translate_data.columns = [i for i in range(1, l)]
+        sns.set_theme(style='ticks', rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                                         'figure.facecolor': 'white', 'axes.grid': False, 'grid.color': 'white',
+                                         'grid.linestyle': '-'})
 
         ax = sns.catplot(data=translate_data, kind='box', showfliers=False, color="blue")
         ax.fig.set_figheight(7)
         ax.fig.set_figwidth(12)
+        plt.grid(axis='both')
 
         sns.lineplot(data=mean, color='black')
 
-        plt.xticks(np.arange(-1, l, 5))
-        plt.yticks(np.arange(0, max(translate_data.max()), 2))
+        plt.yticks(np.arange(0, max(translate_data.max()) + 2, 2))
+        plt.ylim((0, max(translate_data.max())))
+
         plt.xlabel('Position in read(bp)')
         plt.ylabel('Quality')
-        plt.xlim((0, l - 1))
-        plt.ylim((0, max(translate_data.max())))
         plt.title('Quality scores across all bases (' + os.path.basename(path) + ')')
 
-        plt.plot((np.arange(0, l)), [20 for i in (np.arange(0, l))], color="r", linewidth=2)
-        plt.plot((np.arange(0, l)), [28 for i in (np.arange(0, l))], color="green", linewidth=2)
+        plt.xticks(range(0, len(X), int(len(X) * .05 + 0.5)))
+        axis = [i for i in range(-1, len(X) + 1, 1)]
+        plt.xlim(-1, len(X))
+        plt.plot(axis, [20 for i in axis], color="r", linewidth=2)
+        plt.plot(axis, [28 for i in axis], color="green", linewidth=2)
 
         pdf5.savefig()
         pdf5.close()
-
-        return
 
     if process == 6:
         pdf6 = PdfPages("PDF\\Adapters content.pdf")
@@ -359,8 +411,9 @@ def graphic_block(process, path):
             adapters_position.clear()
 
         seq.clear()
-        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
-                    'figure.facecolor': 'white'})
+        sns.set_theme(style='ticks', rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                                         'figure.facecolor': 'white', 'axes.grid': False, 'grid.color': 'white',
+                                         'grid.linestyle': '-'})
 
         colors = ['b', 'm', 'r', 'g', 'tomato', 'navy', 'lime', 'gray', 'pink', 'steelblue']
         plt.figure(figsize=(12, 6))
@@ -384,7 +437,7 @@ def graphic_block(process, path):
 
         if len(xt) > 0:
             plt.xticks(range(1, max(xt) + max(xt) // 18, max(xt) // 18))
-
+        plt.grid(axis='both')
         plt.title('Adapter content with filling (' + os.path.basename(path) + ')')
         plt.xlabel('Position in read')
         plt.ylabel('Percentage')
@@ -414,7 +467,7 @@ def graphic_block(process, path):
         plt.title('Adapter content without filling (' + os.path.basename(path) + ')')
         plt.xlabel('Position in read')
         plt.ylabel('Percentage')
-
+        plt.grid(axis='both')
         pdf6.savefig()
         pdf6.close()
 
@@ -437,14 +490,15 @@ def graphic_block(process, path):
         else:
             return print('The pass must be to gz/fastq file(s)')
 
-        sns.set(rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
-                    'figure.facecolor': 'white'})
+        sns.set_theme(style='ticks', rc={'axes.facecolor': (0.9994925028835063, 0.9192618223760093, 0.6061361014994233),
+                                         'figure.facecolor': 'white', 'axes.grid': False, 'grid.color': 'white',
+                                         'grid.linestyle': '-'})
 
         Length = Counter(l)
         plt.figure(figsize=(12, 6))
         plt.bar(sorted(Length.keys()), [round(Length[i] / 1000, 2) for i in sorted(Length.keys())], width=1,
                 color="blue")
-
+        plt.grid(axis='both')
         if len(Length.keys()) > 1:
             plt.xticks(np.arange(min(Length.keys()), max(Length.keys()) + 10, 10))
         else:
@@ -487,9 +541,10 @@ def clean_block(process, path):
 
 
 if __name__ == '__main__':
-    path = 'New folder\\SRR1608628_1.fastq.gz' 
+    path = 'New folder\\file.fastq.gz'  # r'D:\New folder\SRR1608628_1.fastq.gz
 
     grafics = [i for i in range(8)]
+    manager = multiprocessing.Manager()
 
     processes = [multiprocessing.Process(target=grafics_block, args=(process, path)) for process in grafics]
 
@@ -510,3 +565,6 @@ if __name__ == '__main__':
         merger.append(fileobj=open(os.path.join('PDF', filename), 'rb'))
 
     merger.write(open(os.path.join(os.path.dirname(path), os.path.basename(path) + '.pdf'), 'wb'))
+
+    print("--- %s seconds ---" % (time.time() - start_time))
+
