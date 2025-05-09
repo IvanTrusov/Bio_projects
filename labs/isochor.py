@@ -38,7 +38,7 @@ gc_values = []
 positions = []
 
 # Читаем FASTA-файл с последовательностью
-record = SeqIO.read("GCA_0007.fasta", "fasta")
+record = SeqIO.read("", "fasta") #your fasta
 # Преобразуем последовательность в строку в верхнем регистре
 sequence = str(record.seq).upper()
 
