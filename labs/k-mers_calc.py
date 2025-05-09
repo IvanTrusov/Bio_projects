@@ -69,7 +69,7 @@ def calculate_hexamer_frequency(sequence):
     return frequencies
 
 
-fasta_file = "GCA_0007.fasta"  # Имя файла с последовательностью
+fasta_file = ""  # Имя файла с последовательностью
 
 # Читаем FASTA-файл (берем первую запись, если их несколько)
 record = next(SeqIO.parse(fasta_file, "fasta"))
