@@ -17,7 +17,7 @@ def validate_sequence(sequence):
 
 
 # Основной файл с последовательностью для анализа
-fasta_file = "GCA_0007.fasta"
+fasta_file = ""#your fasta file
 
 # Читаем FASTA-файл (берем первую запись)
 record = next(SeqIO.parse(fasta_file, "fasta"))
@@ -28,11 +28,11 @@ sequence = str(record.seq).upper()
 valid_seq = validate_sequence(sequence)
 
 # Читаем референсные последовательности для расчета CAI
-reference = [str(seq.seq) for seq in SeqIO.parse("ref.fasta", "fasta")]
+reference = [str(seq.seq) for seq in SeqIO.parse("", "fasta")] # your reference file
 results = []  # Список для хранения результатов анализа
 
 # Анализируем генбанковский файл с аннотацией генома
-for record in SeqIO.parse("genomic.gb", "genbank"):
+for record in SeqIO.parse("", "genbank"): #your genbank file with annotation
     # Перебираем все аннотированные признаки в записи
     for feature in record.features:
         # Пропускаем все признаки, кроме CDS (кодирующих последовательностей)
